@@ -7,11 +7,6 @@ import {
 } from '../types';
 import { TasksApi } from '../api';
 
-export interface ILoadTasksConfig {
-	query: string;
-	order: 'due' | 'status';
-}
-
 export type ITaskUpdate = Pick<ITask, 'id'> & Partial<ITask>;
 
 export type INewTask = Pick<ITask, 'description' | 'due_date' | 'title'>;
@@ -21,17 +16,18 @@ const initialState: ITaskSliceState = {
 	taskIds: [],
 };
 
-const loadTasks = createAsyncThunk<ITask[], ILoadTasksConfig, IReduxState>(
+const loadTasks = createAsyncThunk<ITask[], string, IReduxState>(
 	'tasks/load',
-	async ({ query }, thunk) => {
+	async (query, thunk) => {
 		try {
 			const userState = thunk.getState().user;
 			if (userState.user === undefined) return [];
 			const userId = userState.user.id;
-
 			const response = await TasksApi.get<TasksServerResponse<ITask[]>>(
 				`tasks/${userId}`
 			);
+
+			console.log('Response', response.data);
 
 			if (response.data.error) {
 				throw new Error(response.data.data);
@@ -39,13 +35,14 @@ const loadTasks = createAsyncThunk<ITask[], ILoadTasksConfig, IReduxState>(
 
 			return response.data.data;
 		} catch (error) {
+			console.error(error);
 			return [];
 		}
 	}
 );
 
 const createTask = createAsyncThunk<ITask | undefined, INewTask, IReduxState>(
-	'tasks/update',
+	'tasks/create',
 	async (newTask, thunk) => {
 		try {
 			const userState = thunk.getState().user;
@@ -63,6 +60,7 @@ const createTask = createAsyncThunk<ITask | undefined, INewTask, IReduxState>(
 
 			return { ...newTask, id: response.data.data, status: 0 };
 		} catch (error) {
+			console.error(error);
 			return undefined;
 		}
 	}
@@ -89,6 +87,7 @@ const updateTask = createAsyncThunk<
 
 		return update;
 	} catch (error) {
+		console.error(error);
 		return undefined;
 	}
 });
@@ -111,6 +110,7 @@ const deleteTask = createAsyncThunk<string, string, IReduxState>(
 
 			return taskId;
 		} catch (error) {
+			console.error(error);
 			return '';
 		}
 	}

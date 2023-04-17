@@ -8,7 +8,9 @@ import {
 import { TasksApi } from '../api';
 
 const initialState: IUserSliceState = {
-	user: undefined,
+	user: {
+		id: 'TareHimself',
+	},
 };
 
 const loginUser = createAsyncThunk<IUser | undefined, string, IReduxState>(
