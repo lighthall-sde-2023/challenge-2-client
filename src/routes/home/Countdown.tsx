@@ -1,5 +1,4 @@
 import React from 'react';
-import { timestampToString } from '../../utils';
 export interface ICountdownProps {
 	date: number;
 }
