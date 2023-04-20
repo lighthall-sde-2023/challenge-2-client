@@ -1,32 +1,22 @@
 import React from 'react';
 import './App.css';
-import Home from './routes/Home';
-import Login from './routes/Login';
-import Task from './routes/Task';
-import AddTask from './routes/AddTask';
-import Edit from './routes/Edit';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { useAppSelector } from './redux/hooks';
+import { Home, Login } from './routes/exports';
 
+function BaseRoute() {
+	const user = useAppSelector((s) => s.user.user);
+
+	if (!user) {
+		return <Login />;
+	}
+
+	return <Home />;
+}
 const router = createBrowserRouter([
 	{
-		path: '/login',
-		element: <Login />,
-	},
-	{
 		path: '/',
-		element: <Home />,
-	}, 
-	{
-		path: '/task',
-		element: <Task />,
-	},
-	{
-		path: '/addtask',
-		element: <AddTask />,
-	},
-	{
-		path: '/edit',
-		element: <Edit />,
+		element: <BaseRoute />,
 	},
 ]);
 
