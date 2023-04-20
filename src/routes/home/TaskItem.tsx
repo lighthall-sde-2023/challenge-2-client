@@ -1,17 +1,42 @@
 import React from 'react';
 import { FiEdit } from 'react-icons/fi';
+import { MdDeleteOutline } from 'react-icons/md';
 import Countdown from './Countdown';
-export default function TaskItem() {
+import { ITask } from '../../types';
+import { useAppDispatch } from '../../redux/hooks';
+import { deleteTask, setTaskBeingEdited } from '../../redux/tasksStateSlice';
+export interface ITaskItemProps {
+	task: ITask;
+}
+
+const TASK_STATUS_MAP = {
+	0: 'Not Started',
+	1: 'In Progress',
+	2: 'Completed',
+};
+
+export default function TaskItem({ task }: ITaskItemProps) {
+	const dispatch = useAppDispatch();
+
 	return (
 		<div className="task-item">
 			<span className="task-title">
-				<h3>Title</h3>
+				<h3>{task.title}</h3>
 			</span>
 			<span className="task-info">
-				<FiEdit />
+				<FiEdit
+					onClick={() => {
+						dispatch(setTaskBeingEdited(task.id));
+					}}
+				/>
+				<MdDeleteOutline
+					onClick={() => {
+						dispatch(deleteTask(task.id));
+					}}
+				/>
 				<span className="task-status">
-					<h3>Status</h3>
-					<Countdown />
+					<h3>{TASK_STATUS_MAP[task.status]}</h3>
+					<Countdown date={task.due_date} />
 				</span>
 			</span>
 		</div>

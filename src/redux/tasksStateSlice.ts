@@ -1,10 +1,11 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import {
 	IReduxState,
 	ITask,
 	ITaskSliceState,
 	TasksServerResponse,
 } from '../types';
+import { toast } from 'react-hot-toast';
 import { TasksApi } from '../api';
 
 export type ITaskUpdate = Pick<ITask, 'id'> & Partial<ITask>;
@@ -13,15 +14,17 @@ export type INewTask = Pick<ITask, 'description' | 'due_date' | 'title'>;
 
 const initialState: ITaskSliceState = {
 	tasks: {},
-	taskIds: [],
+	sortType: 'date',
+	taskBeingEdited: undefined,
 };
 
 const loadTasks = createAsyncThunk<ITask[], string, IReduxState>(
 	'tasks/load',
 	async (query, thunk) => {
+		const toastId = toast.loading('Loading Tasks');
 		try {
 			const userState = thunk.getState().user;
-			if (userState.user === undefined) return [];
+			if (userState.user === undefined) throw new Error('User not logged in');
 			const userId = userState.user.id;
 			const response = await TasksApi.get<TasksServerResponse<ITask[]>>(
 				`tasks/${userId}`
@@ -32,10 +35,15 @@ const loadTasks = createAsyncThunk<ITask[], string, IReduxState>(
 			if (response.data.error) {
 				throw new Error(response.data.data);
 			}
-
+			toast.success('Tasks Loaded', {
+				id: toastId,
+			});
 			return response.data.data;
-		} catch (error) {
+		} catch (error: any) {
 			console.error(error);
+			toast.error(error.message, {
+				id: toastId,
+			});
 			return [];
 		}
 	}
@@ -44,9 +52,10 @@ const loadTasks = createAsyncThunk<ITask[], string, IReduxState>(
 const createTask = createAsyncThunk<ITask | undefined, INewTask, IReduxState>(
 	'tasks/create',
 	async (newTask, thunk) => {
+		const toastId = toast.loading('Loading Tasks');
 		try {
 			const userState = thunk.getState().user;
-			if (userState.user === undefined) return undefined;
+			if (userState.user === undefined) throw new Error('User not logged in');
 			const userId = userState.user.id;
 
 			const response = await TasksApi.put<TasksServerResponse<string>>(
@@ -57,10 +66,15 @@ const createTask = createAsyncThunk<ITask | undefined, INewTask, IReduxState>(
 			if (response.data.error) {
 				throw new Error(response.data.data);
 			}
-
+			toast.success('Task Created', {
+				id: toastId,
+			});
 			return { ...newTask, id: response.data.data, status: 0 };
-		} catch (error) {
+		} catch (error: any) {
 			console.error(error);
+			toast.error(error.message, {
+				id: toastId,
+			});
 			return undefined;
 		}
 	}
@@ -71,9 +85,10 @@ const updateTask = createAsyncThunk<
 	ITaskUpdate,
 	IReduxState
 >('tasks/update', async (update, thunk) => {
+	const toastId = toast.loading('Loading Tasks');
 	try {
 		const userState = thunk.getState().user;
-		if (userState.user === undefined) return undefined;
+		if (userState.user === undefined) throw new Error('User not logged in');
 		const userId = userState.user.id;
 
 		const response = await TasksApi.post<TasksServerResponse<boolean>>(
@@ -84,10 +99,15 @@ const updateTask = createAsyncThunk<
 		if (response.data.error) {
 			throw new Error(response.data.data);
 		}
-
+		toast.success('Task Updated', {
+			id: toastId,
+		});
 		return update;
-	} catch (error) {
+	} catch (error: any) {
 		console.error(error);
+		toast.error(error.message, {
+			id: toastId,
+		});
 		return undefined;
 	}
 });
@@ -95,9 +115,10 @@ const updateTask = createAsyncThunk<
 const deleteTask = createAsyncThunk<string, string, IReduxState>(
 	'tasks/delete',
 	async (taskId, thunk) => {
+		const toastId = toast.loading('Loading Tasks');
 		try {
 			const userState = thunk.getState().user;
-			if (userState.user === undefined) return '';
+			if (userState.user === undefined) throw new Error('User not logged in');
 			const userId = userState.user.id;
 
 			const response = await TasksApi.delete<TasksServerResponse<boolean>>(
@@ -107,10 +128,15 @@ const deleteTask = createAsyncThunk<string, string, IReduxState>(
 			if (response.data.error) {
 				throw new Error(response.data.data);
 			}
-
+			toast.success('Task Deleted', {
+				id: toastId,
+			});
 			return taskId;
-		} catch (error) {
+		} catch (error: any) {
 			console.error(error);
+			toast.error(error.message, {
+				id: toastId,
+			});
 			return '';
 		}
 	}
@@ -119,10 +145,16 @@ const deleteTask = createAsyncThunk<string, string, IReduxState>(
 const tasksSlice = createSlice({
 	name: 'tasks',
 	initialState,
-	reducers: {},
+	reducers: {
+		setTaskBeingEdited: (
+			state,
+			payload: PayloadAction<ITaskSliceState['taskBeingEdited']>
+		) => {
+			state.taskBeingEdited = payload.payload;
+		},
+	},
 	extraReducers(builder) {
 		builder.addCase(loadTasks.fulfilled, (state, action) => {
-			state.taskIds = action.payload.map((a) => a.id);
 			state.tasks = action.payload.reduce<ITaskSliceState['tasks']>(
 				(total, current) => {
 					total[current.id] = current;
@@ -133,7 +165,6 @@ const tasksSlice = createSlice({
 		});
 		builder.addCase(createTask.fulfilled, (state, action) => {
 			if (action.payload) {
-				state.taskIds.push(action.payload.id);
 				state.tasks[action.payload.id] = action.payload;
 			}
 		});
@@ -142,15 +173,14 @@ const tasksSlice = createSlice({
 				const existing = state.tasks[action.payload.id];
 				if (existing) {
 					state.tasks[action.payload.id] = {
-						...action.payload,
 						...existing,
+						...action.payload,
 					};
 				}
 			}
 		});
 		builder.addCase(deleteTask.fulfilled, (state, action) => {
 			if (action.payload) {
-				state.taskIds.splice(state.taskIds.indexOf(action.payload), 1);
 				delete state.tasks[action.payload];
 			}
 		});
@@ -158,5 +188,5 @@ const tasksSlice = createSlice({
 });
 
 export default tasksSlice.reducer;
-
+export const { setTaskBeingEdited } = tasksSlice.actions;
 export { loadTasks, createTask, updateTask, deleteTask };

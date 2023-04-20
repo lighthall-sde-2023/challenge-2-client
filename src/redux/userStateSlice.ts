@@ -6,7 +6,7 @@ import {
 	TasksServerResponse,
 } from '../types';
 import { TasksApi } from '../api';
-
+import { toast } from 'react-hot-toast';
 const initialState: IUserSliceState = {
 	user: {
 		id: 'TareHimself',
@@ -16,17 +16,23 @@ const initialState: IUserSliceState = {
 const loginUser = createAsyncThunk<IUser | undefined, string, IReduxState>(
 	'user/login',
 	async (userId, thunk) => {
+		const toastId = toast.loading('Loggin in');
 		try {
-			const response = await TasksApi.post<TasksServerResponse<IUser>>(
+			const response = await TasksApi.get<TasksServerResponse<IUser>>(
 				`users/${userId}`
 			);
 
 			if (response.data.error) {
 				throw new Error(response.data.data);
 			}
-
+			toast.success('Logged in', {
+				id: toastId,
+			});
 			return response.data.data;
-		} catch (error) {
+		} catch (error: any) {
+			toast.error(error.message, {
+				id: toastId,
+			});
 			return undefined;
 		}
 	}

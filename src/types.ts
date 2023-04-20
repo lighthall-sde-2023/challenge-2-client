@@ -27,7 +27,8 @@ export interface IUser {
 
 export interface ITaskSliceState {
 	tasks: { [key: string]: ITask | undefined };
-	taskIds: string[];
+	sortType: 'title' | 'status' | 'date';
+	taskBeingEdited: string | undefined;
 }
 
 export interface IUserSliceState {
