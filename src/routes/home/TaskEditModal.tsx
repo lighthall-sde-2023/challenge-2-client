@@ -1,5 +1,4 @@
 import Dropdown from 'react-dropdown';
-import 'react-dropdown/style.css';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { toast } from 'react-hot-toast';
 import { useCallback, useState } from 'react';
@@ -60,7 +59,14 @@ export default function TaskEditModal() {
 	}, [dispatch, selectedTask, taskInfo]);
 
 	return (
-		<div className="task-edit-modal">
+		<div
+			className="task-edit-modal"
+			onClick={(e) => {
+				if ((e.target as HTMLDivElement).className === 'task-edit-modal') {
+					dispatch(setTaskBeingEdited(undefined));
+				}
+			}}
+		>
 			<div className="task-edit-modal-content">
 				<span className="modal-field">
 					<h2>Title</h2>
@@ -79,9 +85,16 @@ export default function TaskEditModal() {
 				</span>
 				<span className="modal-field">
 					<h2>Description</h2>
-					<input
+					<textarea
+						style={{
+							resize: 'none',
+							outline: 'none',
+							borderRadius: '5px',
+							height: '100px',
+							boxSizing: 'border-box',
+							padding: '10px',
+						}}
 						required={true}
-						type={'text'}
 						placeholder={'Describe your task'}
 						value={taskInfo.description}
 						onChange={(e) => {
@@ -121,7 +134,12 @@ export default function TaskEditModal() {
 					/>
 				</span>
 
-				<button onClick={onCompleteButtonClicked}>
+				<button
+					onClick={onCompleteButtonClicked}
+					disabled={
+						taskInfo.title.length === 0 || taskInfo.description.length === 0
+					}
+				>
 					<h3>{selectedTask ? 'Done' : 'Create'}</h3>
 				</button>
 			</div>

@@ -1,5 +1,4 @@
-import './Home.css';
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import NavBar from './NavBar';
 import TaskItem from './TaskItem';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
@@ -10,6 +9,42 @@ export default function Home() {
 	const tasks = useAppSelector((t) => t.tasks.tasks);
 	const isEditingTask = useAppSelector(
 		(s) => s.tasks.taskBeingEdited !== undefined
+	);
+
+	const sortIndex = useAppSelector((s) => s.tasks.sortIndex);
+
+	const sortTasks = useCallback(
+		(a: string, b: string) => {
+			const taskA = tasks[a]!;
+			const taskB = tasks[b]!;
+
+			switch (sortIndex) {
+				case 0:
+					if (
+						taskA.title.replaceAll(' ', '').toLowerCase() >
+						taskB.title.replaceAll(' ', '').toLowerCase()
+					) {
+						return 1;
+					}
+
+					if (
+						taskA.title.replaceAll(' ', '').toLowerCase() <
+						taskB.title.replaceAll(' ', '').toLowerCase()
+					) {
+						return -1;
+					}
+
+					return 0;
+				case 1:
+					return taskA.status - taskB.status;
+
+				case 2:
+					return taskA.due_date - taskB.due_date;
+				default:
+					return 0;
+			}
+		},
+		[sortIndex, tasks]
 	);
 
 	const dispatch = useAppDispatch();
@@ -23,9 +58,11 @@ export default function Home() {
 			<NavBar />
 			{isEditingTask && <TaskEditModal />}
 			<div className="tasks">
-				{Object.keys(tasks).map((a) => (
-					<TaskItem task={tasks[a]!} key={a} />
-				))}
+				{Object.keys(tasks)
+					.sort(sortTasks)
+					.map((a) => (
+						<TaskItem task={tasks[a]!} key={a} />
+					))}
 			</div>
 		</div>
 	);

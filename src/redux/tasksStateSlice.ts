@@ -10,13 +10,18 @@ import { TasksApi } from '../api';
 
 export type ITaskUpdate = Pick<ITask, 'id'> & Partial<ITask>;
 
-export type INewTask = Pick<ITask, 'description' | 'due_date' | 'title'>;
+export type INewTask = Pick<
+	ITask,
+	'description' | 'due_date' | 'title' | 'status'
+>;
 
 const initialState: ITaskSliceState = {
 	tasks: {},
-	sortType: 'date',
+	sortIndex: 0,
 	taskBeingEdited: undefined,
 };
+
+const SORT_TYPES: string[] = ['Title', 'Status', 'Date'];
 
 const loadTasks = createAsyncThunk<ITask[], string, IReduxState>(
 	'tasks/load',
@@ -60,7 +65,7 @@ const createTask = createAsyncThunk<ITask | undefined, INewTask, IReduxState>(
 
 			const response = await TasksApi.put<TasksServerResponse<string>>(
 				`tasks/${userId}`,
-				{ ...newTask, user: userId, status: 0 }
+				{ ...newTask, user: userId }
 			);
 
 			if (response.data.error) {
@@ -69,7 +74,7 @@ const createTask = createAsyncThunk<ITask | undefined, INewTask, IReduxState>(
 			toast.success('Task Created', {
 				id: toastId,
 			});
-			return { ...newTask, id: response.data.data, status: 0 };
+			return { ...newTask, id: response.data.data };
 		} catch (error: any) {
 			console.error(error);
 			toast.error(error.message, {
@@ -148,9 +153,13 @@ const tasksSlice = createSlice({
 	reducers: {
 		setTaskBeingEdited: (
 			state,
-			payload: PayloadAction<ITaskSliceState['taskBeingEdited']>
+			action: PayloadAction<ITaskSliceState['taskBeingEdited']>
 		) => {
-			state.taskBeingEdited = payload.payload;
+			state.taskBeingEdited = action.payload;
+		},
+		setSortIndex: (state, action: PayloadAction<number>) => {
+			state.sortIndex = action.payload;
+			toast.success(`Sorted Tasks By ${SORT_TYPES[action.payload]}`);
 		},
 	},
 	extraReducers(builder) {
@@ -188,5 +197,5 @@ const tasksSlice = createSlice({
 });
 
 export default tasksSlice.reducer;
-export const { setTaskBeingEdited } = tasksSlice.actions;
+export const { setTaskBeingEdited, setSortIndex } = tasksSlice.actions;
 export { loadTasks, createTask, updateTask, deleteTask };

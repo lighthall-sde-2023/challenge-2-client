@@ -1,5 +1,7 @@
 import React from 'react';
+import 'react-dropdown/style.css';
 import './App.css';
+
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { useAppSelector } from './redux/hooks';
 import { Home, Login } from './routes/exports';

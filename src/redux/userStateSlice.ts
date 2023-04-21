@@ -8,9 +8,11 @@ import {
 import { TasksApi } from '../api';
 import { toast } from 'react-hot-toast';
 const initialState: IUserSliceState = {
-	user: {
-		id: 'TareHimself',
-	},
+	user: localStorage.getItem('user')
+		? {
+				id: localStorage.getItem('user') || '',
+		  }
+		: undefined,
 };
 
 const loginUser = createAsyncThunk<IUser | undefined, string, IReduxState>(
@@ -44,12 +46,14 @@ const userSlice = createSlice({
 	reducers: {
 		logoutUser: (state, payload) => {
 			state.user = undefined;
+			localStorage.removeItem('user');
 		},
 	},
 	extraReducers(builder) {
 		builder.addCase(loginUser.fulfilled, (state, action) => {
 			if (action.payload) {
 				state.user = action.payload;
+				localStorage.setItem('user', state.user.id);
 			}
 		});
 	},
